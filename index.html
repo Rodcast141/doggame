@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Brainrot Pets: GitHub Edition</title>
+    <title>Gorilla Dog: Bundle Edition</title>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.3.7/dist/aframe-environment-component.min.js"></script>
 </head>
@@ -11,64 +11,90 @@
             <a-asset-item id="dog-model" src="https://cdn.aframe.io/examples/ar/models/pug/pug.glb"></a-asset-item>
         </a-assets>
 
-        <a-entity id="rig" position="0 0 0" gorilla-physic-move>
+        <a-entity id="rig" position="0 0 0" gorilla-movement>
             <a-camera id="camera" look-controls position="0 0.8 0">
-                <a-entity id="hud" position="0 0 -0.5" scale="0.1 0.1 0.1">
-                    <a-plane width="5" height="5" color="black" opacity="0.8" position="0 2.5 0"></a-plane>
-                    <a-text id="vr-coins" value="BUCKS: 0" color="#00ff00" align="center" position="0 4.2 0.01" width="10"></a-text>
-                    <a-text id="vr-rebirths" value="REBIRTHS: 0/1000" color="cyan" align="center" position="0 3.5 0.01" width="8"></a-text>
-                    <a-text id="leg-button" value="[ BUY LEGS (1 BUCK) ]" class="clickable" color="orange" position="0 2.0 0.01" align="center" width="6" onclick="handleLegs()"></a-text>
-                    <a-text value="[ REBIRTH (1000) ]" class="clickable" color="yellow" position="0 1.2 0.01" align="center" width="6" onclick="doRebirth()"></a-text>
+                <a-entity id="hud" position="0 0 -0.5" scale="0.08 0.08 0.08">
+                    <a-plane width="5" height="4.5" color="#111" opacity="0.9" position="0 2.5 0"></a-plane>
+                    <a-text id="vr-coins" value="BUCKS: 0" color="#00ff00" align="center" position="0 4 0.01" width="10"></a-text>
+                    <a-text value="--- SHOP BUNDLES ---" color="white" align="center" position="0 3.2 0.01" width="6"></a-text>
+                    
+                    <a-text id="btn-gold" value="[ GOLD BUNDLE (10) ]" class="clickable" color="yellow" position="0 2.2 0.01" align="center" width="5" onclick="buyBundle('gold')"></a-text>
+                    <a-text id="btn-speed" value="[ SPEED BUNDLE (20) ]" class="clickable" color="cyan" position="0 1.2 0.01" align="center" width="5" onclick="buyBundle('speed')"></a-text>
                 </a-entity>
 
                 <a-entity id="my-dog-body" gltf-model="#dog-model" position="0 -0.4 0.2" rotation="0 180 0" scale="0.1 0.1 0.1"></a-entity>
-                <a-entity id="visual-legs" visible="false">
-                    <a-box color="#654321" position="-0.15 -0.6 0.1" width="0.04" height="0.4" depth="0.04"></a-box>
-                    <a-box color="#654321" position="0.15 -0.6 0.1" width="0.04" height="0.4" depth="0.04"></a-box>
-                    <a-box color="#654321" position="-0.15 -0.6 -0.1" width="0.04" height="0.4" depth="0.04"></a-box>
-                    <a-box color="#654321" position="0.15 -0.6 -0.1" width="0.04" height="0.4" depth="0.04"></a-box>
-                </a-entity>
             </a-camera>
-            <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10"></a-entity>
-            <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 10"></a-entity>
+            
+            <a-entity id="leftHand" laser-controls="hand: left" raycaster="objects: .clickable; far: 5"></a-entity>
+            <a-entity id="rightHand" laser-controls="hand: right" raycaster="objects: .clickable; far: 5"></a-entity>
         </a-entity>
 
-        <a-entity id="world1">
-            <a-entity environment="preset: forest"></a-entity>
-            <a-octahedron class="clickable" position="0 1.5 -3" color="cyan" scale="1.5 1.5 1.5" onclick="mineCrystal()"></a-octahedron>
-            <a-cylinder position="0 0.5 5" class="clickable" rotation="45 0 0" radius="0.6" height="2" color="red" onclick="launchPlayer(100)"></a-cylinder>
-        </a-entity>
+        <a-entity environment="preset: forest; dressingAmount: 300"></a-entity>
+        
+        <a-octahedron class="clickable" position="0 1 -3" color="#ff00ff" scale="1.2 1.2 1.2" 
+                      animation="property: rotation; to: 0 360 0; loop: true; dur: 4000"
+                      onclick="mineCrystal()">
+        </a-octahedron>
 
-        <a-entity id="world2" position="100 0 0">
-            <a-entity environment="preset: snowy"></a-entity>
-            <a-sphere class="clickable" position="100 1.5 -3" color="white" radius="1.2" onclick="mineCrystal()"></a-sphere>
-            <a-cylinder position="100 0.5 5" class="clickable" rotation="45 180 0" radius="0.6" height="2" color="blue" onclick="launchPlayer(0)"></a-cylinder>
-        </a-entity>
     </a-scene>
 
     <script>
-        let coins = 0; let dmg = 1; let rebirths = 0;
-        let ownsLegs = false; let legsEquipped = false;
+        let coins = 0;
+        let speedMult = 1;
 
-        function mineCrystal() { coins += (rebirths + 1) * dmg; updateUI(); }
-        function handleLegs() {
-            if (!ownsLegs && coins >= 1) {
-                coins -= 1; ownsLegs = true; legsEquipped = true;
-                document.getElementById('visual-legs').setAttribute('visible', 'true');
-                document.getElementById('leg-button').setAttribute('value', "[ UNEQUIP LEGS ]");
-            } else if (ownsLegs) {
-                legsEquipped = !legsEquipped;
-                document.getElementById('visual-legs').setAttribute('visible', legsEquipped);
-                document.getElementById('leg-button').setAttribute('value', legsEquipped ? "[ UNEQUIP LEGS ]" : "[ EQUIP LEGS ]");
+        function mineCrystal() {
+            coins += 1;
+            document.getElementById('vr-coins').setAttribute('value', `BUCKS: ${coins}`);
+        }
+
+        function buyBundle(type) {
+            if (type === 'gold' && coins >= 10) {
+                coins -= 10;
+                document.getElementById('my-dog-body').setAttribute('material', 'color: gold; metalness: 0.8');
+                document.getElementById('btn-gold').setAttribute('value', "GOLD UNLOCKED");
+            } 
+            if (type === 'speed' && coins >= 20) {
+                coins -= 20;
+                speedMult = 2.5;
+                document.getElementById('btn-speed').setAttribute('value', "SPEED UNLOCKED");
             }
-            updateUI();
         }
-        function doRebirth() { if (coins >= 1000) { coins = 0; rebirths++; updateUI(); alert("REBIRTH!"); } }
-        function updateUI() {
-            document.getElementById('vr-coins').setAttribute('value', `BUCKS: ${Math.floor(coins)}`);
-            document.getElementById('vr-rebirths').setAttribute('value', `REBIRTHS: ${rebirths}/1000`);
-        }
-        function launchPlayer(x) { document.querySelector('#rig').setAttribute('animation', `property: position; to: ${x} 0 0; dur: 1500; easing: easeOutExpo`); }
+
+        // GORILLA TAG MOVEMENT LOGIC
+        AFRAME.registerComponent('gorilla-movement', {
+            init: function () {
+                this.leftHand = document.getElementById('leftHand');
+                this.rightHand = document.getElementById('rightHand');
+                this.prevLeftPos = new THREE.Vector3();
+                this.prevRightPos = new THREE.Vector3();
+                this.isLeftDown = false;
+                this.isRightDown = false;
+
+                this.leftHand.addEventListener('triggerdown', () => { this.isLeftDown = true; this.prevLeftPos.copy(this.leftHand.object3D.position); });
+                this.leftHand.addEventListener('triggerup', () => { this.isLeftDown = false; });
+                this.rightHand.addEventListener('triggerdown', () => { this.isRightDown = true; this.prevRightPos.copy(this.rightHand.object3D.position); });
+                this.rightHand.addEventListener('triggerup', () => { this.isRightDown = false; });
+            },
+            tick: function (time, delta) {
+                let rig = this.el.object3D;
+                
+                if (this.isLeftDown) {
+                    let deltaX = (this.prevLeftPos.x - this.leftHand.object3D.position.x) * speedMult;
+                    let deltaZ = (this.prevLeftPos.z - this.leftHand.object3D.position.z) * speedMult;
+                    rig.position.x += deltaX;
+                    rig.position.z += deltaZ;
+                    this.prevLeftPos.copy(this.leftHand.object3D.position);
+                }
+                if (this.isRightDown) {
+                    let deltaX = (this.prevRightPos.x - this.rightHand.object3D.position.x) * speedMult;
+                    let deltaZ = (this.prevRightPos.z - this.rightHand.object3D.position.z) * speedMult;
+                    rig.position.x += deltaX;
+                    rig.position.z += deltaZ;
+                    this.prevRightPos.copy(this.rightHand.object3D.position);
+                }
+            }
+        });
     </script>
 </body>
 </html>
+      
